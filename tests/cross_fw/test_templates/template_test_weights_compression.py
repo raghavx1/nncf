@@ -101,6 +101,10 @@ class TemplateTestFBCAlgorithm:
     
         for val in compressed_model.nncf.external_op.values():
             assert val.forward.call_count == 1
+            
+    class EmptyModel(torch.nn.Module):
+        def forward(self, input):
+            return input
 
     @pytest.mark.parametrize("mode", INT8_MODES)
     @pytest.mark.parametrize(
@@ -160,6 +164,16 @@ class TemplateTestFBCAlgorithm:
     with pytest.raises(nncf.ParameterNotSupportedError):
         compress_weights(wrapped_model, advanced_parameters=AdvancedCompressionParameters(statistics_path="anything"))
 
+    class DTypeModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.weight = torch.nn.Parameter(torch.ones(size=(3, 3), dtype=torch.float32))
+    
+        def forward(self, x):
+            x = x.to(self.weight.dtype)
+            x = x @ self.weight
+            return x
+        
     def test_get_dtype_attribute_of_parameter():
     model = DTypeModel()
     dummy_input = torch.randint(0, 10, [3, 3])
